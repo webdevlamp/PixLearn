@@ -1,10 +1,21 @@
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
+import torch
+import torch.nn as nn
 
-def create_sklearn_classifier(model_type='random_forest'):
-    if model_type == 'random_forest':
-        return RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-    elif model_type == 'svm':
-        return SVC(kernel='rbf', probability=True)
-    else:
-        return RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+class CnnModel(nn.Module):
+    def __init__(self):
+        super(CnnModel, self).__init__()
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.relu = nn.ReLU()
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(64 * 7 * 7, 128)
+        self.fc2 = nn.Linear(128, 10)
+        self.dropout = nn.Dropout(0.5)
+
+    def forward(self, x):
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
+        x = x.view(-1, 64 * 7 * 7)
+        x = self.dropout(self.relu(self.fc1(x)))
+        x = self.fc2(x)
+        return x
