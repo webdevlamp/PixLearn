@@ -1,31 +1,40 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import classification_report, confusion_matrix
 from data.load_datasets import load_mnist_data, load_cifar10_data
 
-def evaluate_model(model, dataset_name='mnist'):
+def evaluate_model(model, dataset_name='mnist', is_sklearn=True):
     if dataset_name == 'mnist':
         (x_train, y_train), (x_test, y_test) = load_mnist_data()
     else:
         (x_train, y_train), (x_test, y_test), classes = load_cifar10_data()
     
-    predictions = model.predict(x_test)
-    predicted_classes = np.argmax(predictions, axis=1)
+    if is_sklearn:
+        x_test_flat = x_test.reshape(x_test.shape[0], -1)
+        predictions = model.predict(x_test_flat)
+    else:
+        predictions = model.predict(x_test)
+        predictions = np.argmax(predictions, axis=1)
     
     test_labels = y_test.flatten()
     
     print(f"\n=== {dataset_name.upper()} Evaluation ===")
-    print(classification_report(test_labels, predicted_classes))
+    print(classification_report(test_labels, predictions))
     
-    cm = confusion_matrix(test_labels, predicted_classes)
+    cm = confusion_matrix(test_labels, predictions)
     plot_confusion_matrix(cm, dataset_name)
     
-    visualize_predictions(x_test, test_labels, predicted_classes, dataset_name)
+    visualize_predictions(x_test, test_labels, predictions, dataset_name)
     
-    return predicted_classes
+    return predictions
 
 def plot_confusion_matrix(cm, dataset_name):
+    os.makedirs('models', exist_ok=True)
     plt.figure(figsize=(10, 8))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
     plt.xlabel('Predicted')
@@ -36,6 +45,7 @@ def plot_confusion_matrix(cm, dataset_name):
     print(f"Confusion matrix saved to models/{dataset_name}_confusion_matrix.png")
 
 def visualize_predictions(x_test, true_labels, predicted_labels, dataset_name, num_samples=10):
+    os.makedirs('models', exist_ok=True)
     fig, axes = plt.subplots(2, 5, figsize=(15, 6))
     axes = axes.flatten()
     
@@ -60,16 +70,17 @@ def visualize_predictions(x_test, true_labels, predicted_labels, dataset_name, n
     print(f"Predictions visualization saved to models/{dataset_name}_predictions.png")
 
 if __name__ == "__main__":
-    from tensorflow.keras.models import load_model
+    from sklearn.ensemble import RandomForestClassifier
+    from data.load_datasets import load_mnist_data
     
-    try:
-        model = load_model('models/mnist_final.h5')
-        evaluate_model(model, 'mnist')
-    except:
-        print("MNIST model not found. Train first.")
+    print("Loading MNIST...")
+    (x_train, y_train), (x_test, y_test) = load_mnist_data()
     
-    try:
-        model = load_model('models/cifar10_final.h5')
-        evaluate_model(model, 'cifar10')
-    except:
-        print("CIFAR-10 model not found. Train first.")
+    x_train_flat = x_train.reshape(x_train.shape[0], -1)
+    x_test_flat = x_test.reshape(x_test.shape[0], -1)
+    
+    model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    print("Training Random Forest...")
+    model.fit(x_train_flat, y_train)
+    
+    evaluate_model(model, 'mnist', is_sklearn=True)
