@@ -1,5 +1,5 @@
 from sklearn.svm import SVC
 
 def create_svm_model():
-    # SVC with RBF kernel is excellent for image classification
-    return SVC(kernel='rbf', gamma='scale', C=10, probability=True)
+    # Increased C (complexity) to better distinguish similar digits like 3 and 7
+    return SVC(kernel='rbf', gamma='scale', C=100, probability=True)
