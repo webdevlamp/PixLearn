@@ -1,181 +1,124 @@
-# PixLearn: Image Classification using Deep Learning
+# PixLearn: Handwritten Digit Recognizer
 
 [![GitHub stars](https://img.shields.io/github/stars/webdevlamp/PixLearn?style=social)](https://github.com/webdevlamp/PixLearn)
-[![GitHub forks](https://img.shields.io/github/forks/webdevlamp/PixLearn?style=social)](https://github.com/webdevlamp/PixLearn)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.14](https://img.shields.io/badge/Python-3.14-blue)](https://www.python.org/)
 
-A deep learning project focused on image classification using Python, TensorFlow, and Keras. This repository documents my learning journey as I explore the world of computer vision and AI.
+A modern, interactive **Handwritten Digit Recognizer** built with **Python 3.14**, **Scikit-Learn**, and **Gradio**. This project demonstrates a complete Machine Learning pipeline—from data processing to a user-friendly Web UI—without requiring heavy Deep Learning frameworks like TensorFlow.
 
-## Project Goals
+## Features
 
-- Implement image classification models using deep learning techniques
-- Experiment with popular architectures and techniques
-- Improve accuracy and efficiency using data augmentation and transfer learning
-- Learn and document the entire ML pipeline from data loading to model deployment
+-   **Interactive Web UI**: Built with Gradio, allowing users to upload images or draw digits directly in the browser.
+-   **High Accuracy**: Uses a Support Vector Machine (SVM) with an RBF kernel, achieving ~98% accuracy on the MNIST dataset.
+-   **Smart Preprocessing**: Automatically handles common user errors:
+    -   **Color Inversion**: Converts black-on-white drawings to white-on-black (matching training data).
+    -   **Auto-Centering**: Centers the digit in the frame to improve recognition regardless of where it's drawn.
+-   **Python 3.14 Ready**: Fully compatible with the latest Python version, avoiding legacy dependency issues.
 
 ## Technologies Used
 
-- Python 3.12
-- TensorFlow 2.x
-- Keras
-- OpenCV
-- NumPy
-- Pandas
-- Matplotlib
-- Scikit-learn
+-   **Python 3.14**: Core language.
+-   **Scikit-Learn**: Machine Learning library (SVM Classifier).
+-   **Gradio**: Web interface for the model.
+-   **NumPy & Pillow**: Image processing and array manipulation.
+-   **OpenML**: Dataset fetching.
 
-## Getting Started
+## How It Works
 
-### Prerequisites
+When you provide an input image (upload or draw), the application follows this flow:
 
-- Ubuntu 24.04 LTS (or similar Linux distribution)
-- Python 3.12
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/webdevlamp/PixLearn.git
-cd PixLearn
-
-# Create and activate virtual environment
-python3 -m venv myenv
-source myenv/bin/activate
-
-# Upgrade pip and install dependencies
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-See [install.md](install.md) for detailed installation instructions.
+1.  **Input**: The user provides an image via the Gradio Web UI.
+2.  **Preprocessing (`app.py`)**:
+    -   **Grayscale**: Converts the image to a single channel.
+    -   **Resize**: Scales the image to 28x28 pixels (standard MNIST size).
+    -   **Inversion**: Checks if the image is black-on-white. If so, it inverts colors to white-on-black.
+    -   **Centering**: Detects the bounding box of the drawn digit and centers it within the 28x28 grid. This ensures the model sees the digit in the same position it was trained on.
+    -   **Flattening**: Converts the 2D image array into a 1D vector (784 pixels) for the SVM.
+3.  **Prediction (`src/models.py`)**:
+    -   The flattened vector is fed into the trained **SVM (Support Vector Machine)** model.
+    -   The model calculates the probability for each digit (0-9).
+4.  **Output**: The app displays the predicted digit and the confidence score.
 
 ## Project Structure
 
 ```
 PixLearn/
-├── data/                       # Dataset loading and preprocessing
-│   ├── __init__.py
-│   └── load_datasets.py        # MNIST & CIFAR-10 loaders
-├── src/                        # Source code
-│   ├── __init__.py
-│   ├── models.py               # CNN & transfer learning models
-│   ├── train.py                # Training scripts
-│   ├── evaluate.py             # Model evaluation & metrics
-│   └── data_augmentation.py    # Data augmentation utilities
-├── notebooks/                  # Jupyter notebooks
-│   ├── 01_tensorflow_keras_basics.ipynb
-│   ├── 02_opencv_basics.ipynb
-│   └── 03_visualization_results.ipynb
-├── models/                     # Saved models and outputs
-├── python_basics/              # Python learning exercises
-│   ├── test.py
-│   ├── calculator.py
-│   ├── guessinggame.py
-│   ├── todos.py
-│   ├── file_io.py
-│   ├── oop_demo.py
-│   ├── functions_modules.py
-│   └── data_structures_algorithms.py
-├── requirements.txt
-├── install.md
-└── README.md
+├── app.py                  # Gradio Web UI and inference logic
+├── src/
+│   ├── train.py            # Script to download data and train the SVM model
+│   └── models.py           # Model definition (SVM Classifier)
+├── data/
+│   ── load_datasets.py    # Utilities for loading MNIST/CIFAR-10
+├── models/                 # Directory for saved trained models
+├── notebooks/              # Jupyter notebooks for exploration
+├── python_basics/          # Python learning exercises
+├── requirements.txt        # Project dependencies
+└── README.md               # This file
 ```
 
-## Usage
+## Getting Started
 
-### 1. Explore Learning Notebooks
+### Prerequisites
 
-Start with the Jupyter notebooks to understand the basics:
+-   **OS**: Ubuntu 24.04 LTS (or similar Linux distribution).
+-   **Python**: Version 3.14 (Required for this version of the project).
+
+### Installation
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/webdevlamp/PixLearn.git
+    cd PixLearn
+    ```
+
+2.  **Install dependencies**:
+    Since Python 3.14 is very new, you may need to use the `--break-system-packages` flag or install to the user directory.
+    
+    ```bash
+    # Option A: User installation (Recommended)
+    pip3 install --user -r requirements.txt
+    
+    # Option B: System-wide (If Option A fails)
+    pip3 install --break-system-packages -r requirements.txt
+    ```
+
+### Usage
+
+1.  **Train the Model**:
+    Before running the app, you must train the SVM model on the MNIST dataset. This downloads the data and saves the model to `models/mnist_svm.pkl`.
+    
+    ```bash
+    python3 src/train.py
+    ```
+    *Note: Training takes approximately 2-5 minutes.*
+
+2.  **Run the Web App**:
+    Start the Gradio server.
+    
+    ```bash
+    python3 app.py
+    ```
+
+3.  **Open in Browser**:
+    The terminal will display a local URL (e.g., `http://127.0.0.1:7860`). Open this link in your browser to use the Digit Recognizer.
+
+## Command Line Prediction
+
+You can also predict digits from the command line without the Web UI:
 
 ```bash
-jupyter notebook notebooks/
+python3 src/predict.py /path/to/image.png
 ```
 
-- **01_tensorflow_keras_basics.ipynb** - TensorFlow tensors, building and training neural networks
-- **02_opencv_basics.ipynb** - Image processing, filtering, contours, thresholding
-- **03_visualization_results.ipynb** - Model evaluation, confusion matrices, feature maps
+## Learning Journey
 
-### 2. Run Python Basics Exercises
+This repository documents a learning journey in Machine Learning, evolving from basic Python scripts to a functional AI application.
 
-```bash
-python python_basics/file_io.py
-python python_basics/oop_demo.py
-python python_basics/functions_modules.py
-python python_basics/data_structures_algorithms.py
-```
-
-### 3. Load and Explore Datasets
-
-```bash
-python data/load_datasets.py
-```
-
-### 4. Train Models
-
-```bash
-# Train CNN on MNIST and CIFAR-10
-python src/train.py
-
-# Train with transfer learning (MobileNetV2, ResNet50, etc.)
-python src/transfer_learning.py
-
-# Run data augmentation examples
-python src/data_augmentation.py
-```
-
-### 5. Evaluate Models
-
-```bash
-python src/evaluate.py
-```
-
-## Model Architectures
-
-### CNN for MNIST
-- 3 Conv2D layers (32, 64, 64 filters)
-- MaxPooling after first two conv layers
-- Dense layer (64 units) + Softmax output
-
-### CNN for CIFAR-10
-- 4 Conv2D layers with BatchNormalization
-- Dropout for regularization
-- Data augmentation (flip, rotation, zoom, translation)
-
-### Transfer Learning
-- MobileNetV2, ResNet50, EfficientNetB0 backbones
-- Two-phase training: frozen base then fine-tuning
-- GlobalAveragePooling2D + Dense classifier head
-
-## Learning Roadmap (GitHub Issues)
-
-This project follows a structured learning path tracked via GitHub Issues:
-
-- [x] Python Basics (OOP, Functions, File I/O, DSA)
-- [x] TensorFlow/Keras Basics
-- [x] OpenCV Computer Vision Basics
-- [x] Explore Datasets (MNIST, CIFAR-10)
-- [x] Implement Image Classification Models
-- [x] Train and Evaluate Models
-- [x] Visualize Results
-- [x] Experiment with Transfer Learning & Data Augmentation
-
-## Results
-
-Training results, confusion matrices, and prediction visualizations are saved to the `models/` directory after training:
-
-- `models/mnist_training_history.png` - MNIST training curves
-- `models/cifar10_training_history.png` - CIFAR-10 training curves
-- `models/*_confusion_matrix.png` - Confusion matrices
-- `models/*_predictions.png` - Prediction visualizations
-
-## Contributions and Feedback
-
-Contributions, feedback, and suggestions are welcome! If you have any ideas or want to collaborate, please open an issue or submit a pull request.
+-   **Phase 1**: Python Basics (OOP, File I/O, Data Structures).
+-   **Phase 2**: Data Exploration (MNIST, CIFAR-10).
+-   **Phase 3**: Model Implementation (Random Forest -> SVM).
+-   **Phase 4**: Web Integration (Gradio UI).
 
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
-## Follow My Journey
-
-Follow my progress, insights, and mistakes as I learn and improve. Stay tuned for updates!
