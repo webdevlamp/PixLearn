@@ -3,45 +3,55 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import gradio as gr
-import torch
-import torch.nn.functional as F
-from torchvision import transforms
+import numpy as np
+import joblib
 from PIL import Image
-from src.models import CnnModel
 
-MODEL_PATH = 'models/mnist_cnn.pth'
+MODEL_PATH = 'models/mnist_svm.pkl'
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Model not found at {MODEL_PATH}. Please run src/train.py first.")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = CnnModel().to(device)
-model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
-model.eval()
-
-transform = transforms.Compose([
-    transforms.Resize((28, 28)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.1307,), (0.3081,))
-])
+model = joblib.load(MODEL_PATH)
 
 def predict_digit(image):
     if image is None:
         return "Please upload an image.", 0.0
     
+    # 1. Grayscale and Resize
     img = image.convert('L')
+    img = img.resize((28, 28))
+    img_array = np.array(img).astype('float32')
     
-    # Invert if necessary (MNIST is white on black)
-    if torch.tensor(list(img.getdata())).mean() > 127:
-        img = Image.eval(img, lambda x: 255 - x)
-        
-    img_tensor = transform(img).unsqueeze(0).to(device)
+    # 2. Invert colors if necessary (MNIST is white on black)
+    if np.mean(img_array) > 127:
+        img_array = 255 - img_array
     
-    with torch.no_grad():
-        output = model(img_tensor)
-        probabilities = F.softmax(output, dim=1)
-        confidence, predicted = torch.max(probabilities, 1)
+    # 3. Normalize
+    img_array = img_array / 255.0
+    
+    # 4. Center the digit (MNIST style preprocessing)
+    coords = np.column_stack(np.where(img_array > 0.1))
+    if len(coords) > 0:
+        y_min, x_min = coords.min(axis=0)
+        y_max, x_max = coords.max(axis=0)
         
-    return f"Predicted Digit: {predicted.item()}", f"Confidence: {confidence.item():.2%}"
+        digit_roi = img_array[y_min:y_max+1, x_min:x_max+1]
+        digit_roi = Image.fromarray((digit_roi * 255).astype('uint8'))
+        digit_roi = digit_roi.resize((20, 20))
+        digit_roi = np.array(digit_roi).astype('float32') / 255.0
+        
+        new_img = np.zeros((28, 28), dtype='float32')
+        new_img[4:24, 4:24] = digit_roi
+        img_array = new_img
+    
+    img_array = img_array.reshape(1, -1)
+    
+    # Predict
+    prediction = model.predict(img_array)[0]
+    probabilities = model.predict_proba(img_array)[0]
+    confidence = probabilities[prediction]
+    
+    return f"Predicted Digit: {prediction}", f"Confidence: {confidence:.2%}"
 
 iface = gr.Interface(
     fn=predict_digit,
@@ -50,7 +60,7 @@ iface = gr.Interface(
         gr.Textbox(label="Prediction"),
         gr.Textbox(label="Confidence")
     ],
-    title="PixLearn - Digit Recognizer (PyTorch CNN)",
+    title="PixLearn - Digit Recognizer (SVM)",
     description="Upload an image of a handwritten digit (0-9) to classify it.",
 )
 
