@@ -3,10 +3,11 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
-import matplotlib.pyplot as plt
+import joblib
 from sklearn.metrics import accuracy_score, classification_report
 from data.load_datasets import load_mnist_data, load_cifar10_data
 from src.models import create_sklearn_classifier
+from src.evaluate import evaluate_model
 
 def train_sklearn_mnist(model_type='random_forest'):
     print(f"=== Training Scikit-Learn {model_type.upper()} on MNIST ===")
@@ -24,6 +25,14 @@ def train_sklearn_mnist(model_type='random_forest'):
     acc = accuracy_score(y_test, y_pred)
     print(f"\nMNIST Test Accuracy: {acc:.4f}")
     print(classification_report(y_test, y_pred))
+    
+    # Save model
+    os.makedirs('models', exist_ok=True)
+    joblib.dump(model, 'models/mnist_rf_model.pkl')
+    print("Model saved to models/mnist_rf_model.pkl")
+    
+    # Generate visualizations
+    evaluate_model(model, 'mnist', is_sklearn=True)
     
     return model, y_pred
 
