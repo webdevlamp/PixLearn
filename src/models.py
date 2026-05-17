@@ -1,5 +1,8 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 
 def create_cnn_mnist(input_shape=(28, 28, 1), num_classes=10):
     model = models.Sequential([
@@ -58,6 +61,14 @@ def create_cnn_cifar10(input_shape=(32, 32, 3), num_classes=10):
     )
     
     return model
+
+def create_sklearn_classifier(model_type='random_forest'):
+    if model_type == 'random_forest':
+        return RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    elif model_type == 'svm':
+        return SVC(kernel='rbf', probability=True)
+    else:
+        return RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
 
 def create_transfer_learning_model(input_shape=(32, 32, 3), num_classes=10, base_model_name='MobileNetV2'):
     if base_model_name == 'MobileNetV2':
